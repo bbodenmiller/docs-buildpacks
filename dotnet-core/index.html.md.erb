@@ -48,8 +48,8 @@ project = src/MyApp.Web/MyApp.Web.csproj
 In this example, the buildpack automatically compiles the `MyApp.DAL` and `MyApp.Services` projects if the `MyApp.Web.csproj` file of the main project lists them as dependencies. The buildpack attempts to execute the main project with `dotnet run -p src/MyApp.Web/MyApp.Web.csproj`.
 
 ### <a id='non-default-package-sources'></a>Using Non-Default Package Sources ###
-TODO: list default nuget source
-To deploy an app that uses non-default package sources, you must specify those package sources in the `NuGet.Config` file.
+
+To deploy an app that uses non-default package sources, you must specify those package sources in the [`NuGet.Config` file](https://docs.microsoft.com/en-us/nuget/reference/nuget-config-file).
 For a basic example, see this [Hello World sample](https://github.com/IBM-Bluemix/aspnet-core-helloworld).
 
 ### <a id='disabling-nuget'></a>Disabling and Clearing the NuGet Package Cache
@@ -81,38 +81,35 @@ Perform one of the following procedures to set `CACHE_NUGET_PACKAGES` to `false`
 See the [Environment Variables](../../devguide/deploy-apps/manifest.html#env-block) section of the <em>Deploying with Application Manifests</em> topic for more information.
 
 ## <a id='framework-dependent'></a>Framework Dependent Deployments (FDD) Workflow ##
+This is the recommended workflow when deploying an app in an offline setting.
 
-To deploy an [FDD](https://docs.microsoft.com/en-us/dotnet/core/deploying/index#framework-dependent-deployments-fdd) using the offline buildpack, ensure the following:
+To deploy an [FDD](https://docs.microsoft.com/en-us/dotnet/core/deploying/index#framework-dependent-deployments-fdd) using the buildpack:
 
-- Do not set `applyPatches: false` in  `*.runtimeconfig.json`.
-- TODO `dotnet publish` option to not include runtime (FDD is current default)
 
-Deploying an FDD is the recommended deployment method for an offline workflow, as it will allow the deployed application to use the latest runtime provided by the offline buildpack. # TODO link to offline workflow section
-
-## <a id='self-contained'></a>Self-Contained Deployments (SCD) Workflow ##
-- TODO `dotnet publish` option to include the runtime
-- TODO downsides: we don't update dependencies for you, because you're a pre-built binary....
-
-## <a id='offline'></a>Offline Workflow ##
-- TODO recc FDD
-- TODO not that SCD is possible, but downsides
-### <a id='disconnected-environments'></a>Push an App in a Disconnected Environment ###
-
-For offline use, you can cache the binaries in `manifest.yml` with the buildpack.
-
-You can push apps with their other dependencies following these steps:
-
-1. Publish the app by running `dotnet publish -r ubuntu.14.04-x64`.
-
-    <p class="note"><strong>Note</strong>: For this publish command to work, modify your app code so the .NET CLI publishes it as a self-contained app. For more information, see <a href="https://docs.microsoft.com/en-us/dotnet/articles/core/deploying/">.NET Core Application Deployment</a>.
-    </p>
+1. Publish the app by running `dotnet publish [-f <framework>] [-c Release]`.
 
 1. Navigate to the `bin/<Debug|Release>/<framework>/<runtime>/publish` directory. Or, if your app uses a `manifest.yml`, specify a path to the publish output folder. This allows you to push your app from any directory.
 
 1. Push your app.
 
-## <a id='cli-tools'></a> .NET Core SDKs ##
-- TODO ^ make better anchor name
+**Note**: Do not set `applyPatches: false` in  `*.runtimeconfig.json`. This will prevent your app from receiving updates to the runtime version.
+
+## <a id='self-contained'></a>Self-Contained Deployments (SCD) Workflow ##
+This workflow is not recommended. Because this workflow results in a prepublished binary, we are unable to keep all your dependencies in-sync and up-to-date.
+
+The SCD workflow is the same as the FDD workflow, except you must specify a runtime in the publish command:
+
+```
+dotnet publish -r ubuntu14.04-x64
+```
+
+See [more details for FDD vs SCD deployments](https://docs.microsoft.com/en-us/dotnet/core/deploying/)
+
+## <a id='offline'></a>Offline Workflow - Push an App in a Disconnected Environment##
+
+Using the [Framework Dependent Deployment (FDD) workflow](#framework-dependent) is the recommended deployment method for an offline environment, as it will allow the deployed application to use the latest runtime provided by the offline buildpack. 
+
+## <a id='dotnet-sdk'></a> .NET Core SDKs ##
 To pin the .NET Core SDK to a specific version or version line, create a `buildpack.yml` file at the app root and add the following:
 
 ```
@@ -135,8 +132,8 @@ dotnet-core:
 The buildpack chooses which SDK to install based on the files present at the app root, according to the following order of precedence:
 
 1. `buildpack.yml`
-2. `global.json`
-3. If the app contains only `*.fsproj` files, the buildpack installs the latest 1.1.x SDK.
+1. `global.json`
+1. If the app contains only `*.fsproj` files, the buildpack installs the latest 1.1.x SDK.
 
 <p class="note"><strong>Note</strong>: The app respects the SDK version specified in <code>global.json</code> at runtime. If you provide versions in both <code>global.json</code> and <code>buildpack.yml</code>, ensure that you specify the same versions in both files.</p>
 
